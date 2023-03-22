@@ -1,14 +1,12 @@
-﻿using System;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Shopbridge_base.Domain.Models;
+using Shopbridge_base.Domain.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Shopbridge_base.Data;
-using Shopbridge_base.Domain.Models;
-using Shopbridge_base.Domain.Services.Interfaces;
 
 namespace Shopbridge_base.Controllers
 {
@@ -16,51 +14,122 @@ namespace Shopbridge_base.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductService productService;
-        private readonly ILogger<ProductsController> logger;
-        public ProductsController(IProductService _productService)
-        {
-            this.productService = _productService;
-        }
+        private readonly IProductService _productService;
+        private readonly ILogger<ProductsController> _logger;
 
+        public ProductsController(IProductService productService, ILogger<ProductsController> logger)
+        {
+            _productService = productService;
+            _logger = logger;
+        }
        
-        [HttpGet]   
-        public async Task<ActionResult<IEnumerable<Product>>> GetProduct()
+        [HttpPost("list-products")]   
+        public async Task<ActionResult<IEnumerable<Product>>> ListProducts(ProductRequestModel request)
         {
-            return NoContent();
+            try
+            {
+                _logger.LogInformation("Trying to get list of products");
+                var result = await _productService.ListProducts(request);
+
+                if (result.Any()) 
+                    return Ok(result);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }            
         }
 
-        
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        [HttpGet("get-all-products")]
+        public async Task<ActionResult<IEnumerable<Product>>> GetAllProducts()
         {
-            return NoContent();
+            try
+            {
+                _logger.LogInformation("Trying to get all products");
+                var result = await _productService.GetAllProducts();
+
+                if (result.Any())
+                    return Ok(result);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
+        [HttpGet("get-product/{id}")]
+        public async Task<ActionResult<Product>> GetProduct(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("Trying to get a product");
+                var result = _productService.GetProduct(id);
+
+                if (result != null)
+                    return Ok(result);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
        
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, Product product)
+        [HttpPut("edit-product/{id}")]
+        public async Task<IActionResult> PutProduct(Guid id, Product product)
         {
-            return NoContent();
-        }
+            try
+            {
+                _logger.LogInformation("Trying to update a product");
+                var result = _productService.Update(id, product);
 
+                if (result != null)
+                    return Ok(result);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         
-        [HttpPost]
+        [HttpPost("add-product")]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
-            return NoContent();
-        }
+            try
+            {
+                _logger.LogInformation("Trying to insert a product");
+                var result = await _productService.Insert(product);
 
+                if (result != null)
+                    return Ok(result);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        [HttpDelete("remove-product/{id}")]
+        public async Task<IActionResult> DeleteProduct(Guid id)
         {
-            return NoContent();
-        }
-
-        private bool ProductExists(int id)
-        {
-            return false;
+            try
+            {
+                _logger.LogInformation("Trying to remove a product");
+                return _productService.Remove(id) ? Ok("Product has been removed") : Ok("Product has not been removed");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

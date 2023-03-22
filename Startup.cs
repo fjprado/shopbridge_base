@@ -1,23 +1,17 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Shopbridge_base.Data;
-using Shopbridge_base.Domain.Services.Interfaces;
+using Shopbridge_base.Data.Repository.Implementations;
+using Shopbridge_base.Data.Repository.Interfaces;
 using Shopbridge_base.Domain.Services;
+using Shopbridge_base.Domain.Services.Interfaces;
 
 namespace Shopbridge_base
 {
@@ -46,6 +40,7 @@ namespace Shopbridge_base
                     options.UseSqlServer(Configuration.GetConnectionString("Shopbridge_Context")));
 
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductRepository, ProductRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
