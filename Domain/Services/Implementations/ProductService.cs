@@ -103,8 +103,8 @@ namespace Shopbridge_base.Domain.Services
                 var entity = _productRepository.Get(x => x.Product_Id == entity_id).Result.FirstOrDefault();
                 if (entity == null)
                 {
-                    
-                    throw new Exception($"Product not found - Id: {entity.Product_Id}");
+                    _logger.LogWarning("Product not found");
+                    throw new Exception($"Product not found - Id: {entity_id}");
                 }                    
 
                 return _productRepository.Remove(entity);
