@@ -16,12 +16,9 @@ namespace Shopbridge_base.Data.Repository.Implementations
             _context = context;
         }
 
-        public async Task<IEnumerable<T>> Get(Expression<Func<T, bool>>? expression = null, int? skip = null, int? take = null)
+        public async Task<IEnumerable<T>> Get(Expression<Func<T, bool>> expression = null, int? skip = null, int? take = null)
         {
-            var query = _context.Set<T>().AsQueryable();
-
-            if (expression != null)
-                query = query.Where(expression);
+            var query = _context.Set<T>().Where(expression);
 
             if (skip != null && skip.HasValue)
                 query = query.Skip(skip.Value);
@@ -29,7 +26,7 @@ namespace Shopbridge_base.Data.Repository.Implementations
             if (take != null && take.HasValue)
                 query = query.Take(take.Value);
 
-            return await query.ToListAsync();
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<IEnumerable<T>> GetAll()
@@ -54,6 +51,7 @@ namespace Shopbridge_base.Data.Repository.Implementations
         public bool Remove(T entity)
         {
             var result = _context.Remove(entity).State;
+            _context.SaveChanges();
             return result == EntityState.Deleted;
         }
     }
