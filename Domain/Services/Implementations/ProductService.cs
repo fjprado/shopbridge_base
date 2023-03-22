@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Shopbridge_base.Data.Repository.Interfaces;
 using Shopbridge_base.Domain.Models;
 using Shopbridge_base.Domain.Services.Interfaces;
@@ -15,6 +16,7 @@ namespace Shopbridge_base.Domain.Services
     {
         private readonly ILogger<ProductService> _logger;
         private readonly IProductRepository _productRepository;
+
         public ProductService(
             IProductRepository productRepository,
             ILogger<ProductService> logger)
@@ -23,49 +25,115 @@ namespace Shopbridge_base.Domain.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Product>> Get(Guid? id, decimal? priceStart = 0, decimal? priceEnd = 0, int? skip = null, int? take = null)
-        {       
-            if(id == null)
-                throw new Exception($"Product Id not found");
+        public async Task<IEnumerable<Product>> ListProducts(ProductRequestModel request)
+        {
+            try
+            {
+                request.Page = request.Page > 0 ? request.Page : 1;
+                request.ItemsPerPage = request.ItemsPerPage > 0 ? request.ItemsPerPage : 10;
 
-            return await _productRepository.Get(
-                x => x.Product_Id == id &&
-                (priceStart == 0 || x.Product_Price >= priceStart) &&
-                (priceEnd == 0 || x.Product_Price <= priceEnd),
-                skip: skip, take: take);
+                _logger.LogInformation("Getting list of products");
+
+                return await _productRepository.Get(x =>
+                    (request.PriceStart == 0 || x.Product_Price >= request.PriceStart) &&
+                    (request.PriceEnd == 0 || x.Product_Price <= request.PriceEnd),
+                    skip: (request.Page - 1) * request.ItemsPerPage, take: request.ItemsPerPage);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }            
         }
 
-        public Task<IEnumerable<Product>> GetAll()
+        public async Task<IEnumerable<Product>> GetAllProducts()
         {
-            return _productRepository.GetAll();
+            try
+            {
+                _logger.LogInformation("Getting all products");
+                return await _productRepository.GetAll();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }            
+        }
+
+        public Product GetProduct(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("Getting product by id");
+                if (_productRepository.Get(x => x.Product_Id == id).Result.IsNullOrEmpty())
+                {
+                    _logger.LogWarning("Product not found");
+                    throw new Exception($"Product not found - Id: {id}");
+                }                    
+
+                return _productRepository.Get(x => x.Product_Id == id).Result.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
         }
 
         public Task<Product> Insert(Product entity)
         {
-            entity.Product_Id = Guid.NewGuid();
-            entity.Product_StockBalance ??= 0;
-
-            return _productRepository.Insert(entity);
+            try
+            {                
+                entity.Product_Id = Guid.NewGuid();
+                _logger.LogInformation("Inserting product into database");
+                return _productRepository.Insert(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }            
         }
 
         public bool Remove(Guid entity_id)
         {
-            var entity = _productRepository.Get(x => x.Product_Id == entity_id).Result.FirstOrDefault();
-            if (entity == null)
-                throw new Exception($"Product not found - Id: {entity.Product_Id}");
+            try
+            {
+                _logger.LogInformation("Getting product by id");
+                var entity = _productRepository.Get(x => x.Product_Id == entity_id).Result.FirstOrDefault();
+                if (entity == null)
+                {
+                    
+                    throw new Exception($"Product not found - Id: {entity.Product_Id}");
+                }                    
 
-            return _productRepository.Remove(entity);
+                return _productRepository.Remove(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }            
         }
 
-        public Product Update(Product entity)
+        public Product Update(Guid id, Product entity)
         {
-            var entityFound = _productRepository.Get(x => x.Product_Id == entity.Product_Id).Result.FirstOrDefault();
-            if (entityFound == null)
-                throw new Exception($"Product not found - Id: {entity.Product_Id}");
+            try
+            {
+                _logger.LogInformation("Getting product by id");
+                if (_productRepository.Get(x => x.Product_Id == id).Result.IsNullOrEmpty())
+                {
+                    _logger.LogWarning("Product not found");
+                    throw new Exception($"Product not found - Id: {id}");
+                }                    
 
-            entity.Product_StockBalance ??= entityFound.Product_StockBalance;
-
-            return _productRepository.Update(entity);           
+                return _productRepository.Update(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }                   
         }
     }
 }
