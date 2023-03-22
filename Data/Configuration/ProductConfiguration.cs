@@ -14,7 +14,8 @@ namespace Shopbridge_base.Data.Configuration
                 .IsRequired()
                 .HasMaxLength(50);
 
-            builder.Property(p => p.Product_Description);
+            builder.Property(p => p.Product_Description)
+                .IsRequired();
 
             builder.Property(p => p.Product_Price)
                 .IsRequired()
