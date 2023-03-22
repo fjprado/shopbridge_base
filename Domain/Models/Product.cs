@@ -10,6 +10,6 @@ namespace Shopbridge_base.Domain.Models
         public string Product_Name { get; set; }
         public string Product_Description { get; set; }
         public decimal Product_Price { get; set; }
-        public double? Product_StockBalance { get; set; }
+        public decimal Product_StockBalance { get; set; }
     }
 }
